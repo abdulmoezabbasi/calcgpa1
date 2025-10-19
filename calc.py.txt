@@ -1,0 +1,56 @@
+import streamlit as st
+import pandas as pd
+
+st.set_page_config(page_title="GPA & CGPA Calculator", page_icon="🎓", layout="centered")
+
+st.title("🎓 GPA & CGPA Calculator")
+st.markdown("Calculate your **Semester GPA** and **Overall CGPA** easily!")
+
+st.divider()
+
+# Number of semesters
+semesters = st.number_input("📘 Enter number of semesters completed:", min_value=1, max_value=20, step=1)
+
+semester_data = []
+
+for sem in range(semesters):
+    with st.expander(f"Semester {sem+1} Details"):
+        num_courses = st.number_input(f"Number of courses in Semester {sem+1}:", min_value=1, max_value=15, step=1, key=f"courses_{sem}")
+        
+        course_names = []
+        credit_hours = []
+        grade_points = []
+        
+        for i in range(num_courses):
+            st.write(f"**Course {i+1}:**")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                course = st.text_input("Course Name", key=f"course_{sem}_{i}")
+            with col2:
+                credit = st.number_input("Credit Hours", min_value=0.5, step=0.5, key=f"credit_{sem}_{i}")
+            with col3:
+                gpa = st.number_input("Grade Point (0.0 - 4.0)", min_value=0.0, max_value=4.0, step=0.01, key=f"gpa_{sem}_{i}")
+
+            course_names.append(course)
+            credit_hours.append(credit)
+            grade_points.append(gpa)
+        
+        if st.button(f"Calculate Semester {sem+1} GPA", key=f"calc_{sem}"):
+            total_credits = sum(credit_hours)
+            total_points = sum([credit_hours[i] * grade_points[i] for i in range(num_courses)])
+            sem_gpa = total_points / total_credits if total_credits > 0 else 0
+            st.success(f"📊 **Semester {sem+1} GPA:** {sem_gpa:.2f}")
+            semester_data.append({"Semester": sem+1, "GPA": sem_gpa, "Credits": total_credits})
+
+# Calculate CGPA if all semesters have data
+if st.button("💥 Calculate Overall CGPA"):
+    if semester_data:
+        total_credits = sum([s["Credits"] for s in semester_data])
+        total_points = sum([s["GPA"] * s["Credits"] for s in semester_data])
+        cgpa = total_points / total_credits if total_credits > 0 else 0
+        st.success(f"🎯 **Your Overall CGPA:** {cgpa:.2f}")
+
+        df = pd.DataFrame(semester_data)
+        st.dataframe(df.style.format({"GPA": "{:.2f}", "Credits": "{:.1f}"}))
+    else:
+        st.warning("Please calculate at least one semester GPA first.")
